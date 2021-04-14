@@ -65,8 +65,6 @@ public:
         }
         return true;
     }
-
-
 };
 
 class Game {
@@ -147,8 +145,8 @@ public:
     string randomCoorPair(){
         mt19937 rng(rand());
         string s ="";
-        uniform_int_distribution randNum(49,57-(9-boardSize));
-        uniform_int_distribution randLet(65,73-(9-boardSize));
+        uniform_int_distribution<int> randNum(49,57-(9-boardSize));
+        uniform_int_distribution<int> randLet(65,73-(9-boardSize));
         s += randLet(rng);
         s += randNum(rng);
         return s;
@@ -156,7 +154,7 @@ public:
 
     int randomCoor(){
         mt19937 rng(rand());
-        uniform_int_distribution randNum(1,boardSize);
+        uniform_int_distribution<int> randNum(1,boardSize);
         return randNum(rng);
     }
 
@@ -187,8 +185,6 @@ public:
         }
     }
 
-
-
     string fixCoorInput(string s) {
         string n="";
         if (s[0] > 96 && s[0] < 106) {
@@ -209,6 +205,24 @@ public:
         } else {
             return true;
         }
+    }
+
+    bool verifyCoorRange(string s, int pieceSize) {
+        string coor1 = s.substr(0,s.find('-'));
+        string coor2 = s.substr(s.find('-')+1,s.length()-1);
+        if (!verifyCoorInput(coor1) || !verifyCoorInput(coor2))
+          return false;
+        if ((coor1[0] != coor2[0]) && (coor1[1] != coor2[1]))
+          return false;
+        if (coor1[1] == coor2[1]){;
+          if ((pieceSize - (int(coor2[0]) - int(coor1[0]))) != 1)
+            return false;
+        }
+        else if (coor1[0] == coor2[0]){
+          if (pieceSize - (coor2[1] - coor1[1]) != 1)
+            return false;
+        }
+        return true;
     }
 
     bool checkForDuplicates(string* s,string input){
@@ -296,43 +310,53 @@ public:
         return result;
     }
 
+    string getGuess(Player human){
+      string input;
+      cout << "Please guess a coordinate" << endl;
+      cin >> input;
+      while(!verifyCoorInput(input)){ //Loop to verify valid input
+          cout << "Invalid coordinate, please try again" << endl;
+          cin >> input;
+          verifyCoorInput(input);
+      }
+      input = fixCoorInput(input);
+      while(!human.checkForDuplicates(numerizeCoor(input))){
+          cout << "Duplicate coordinate, please try again" << endl;
+          cin >> input;
+          while(!verifyCoorInput(input)){ //Loop to verify valid input
+              cout << "Invalid coordinate, please try again" << endl;
+              cin >> input;
+          }
+          input = fixCoorInput(input);
+      }
+      input = fixCoorInput(input);
+      return input;
+    }
+
     void gamePlay(){
         string input;
+        string alphinput;
         Player human;
         Player comp;
         printGameBoard(human, comp);
         while(boardStatus(humanBoard) && boardStatus(compBoard)){
-            cout << "Please guess a coordinate" << endl;
-            cin >> input;
-            while(!verifyCoorInput(input)){ //Loop to verify valid input
-                cout << "Invalid coordinate, please try again" << endl;
-                cin >> input;
-                verifyCoorInput(input);
-            }
-            input = fixCoorInput(input);
-            string alphinput = input;
+            input = getGuess(human);
+            alphinput = input;
             input = numerizeCoor(input);
-            while(!human.checkForDuplicates(input)){
-                cout << "Duplicate coordinate, please try again" << endl;
-                cin >> input;
-                while(!verifyCoorInput(input)){ //Loop to verify valid input
-                    cout << "Invalid coordinate, please try again" << endl;
-                    cin >> input;
-                    verifyCoorInput(input);
-                }
-                input = fixCoorInput(input);
-                alphinput = input;
-                input = numerizeCoor(input);
+            while(checkGuess(compBoard,input)){
+              cout << "You guessed " << alphinput << " and HIT" << endl;
+              hit(compBoard, input);
+              human.addHit(input);
+              printGameBoard(human, comp);
+              if (!boardStatus(compBoard)) {
+                cout << "Congratulations!! You win!!" << endl;
+                return;
+              }
+              input = getGuess(human);
+              alphinput = input;
+              input = numerizeCoor(input);
             }
-            if(checkGuess(compBoard, input)){
-                cout << "You guessed " << alphinput << " and HIT" << endl;
-                hit(compBoard, input);
-                human.addHit(input);
-                if (!boardStatus(compBoard)) {
-                    cout << "Congratulations!! You win!!" << endl;
-                    break;
-                }
-            }else{
+            if(!checkGuess(compBoard,input)){
                 cout << "You guessed " << alphinput << " and MISSED" << endl;
                 human.addGuess(input);
             }
@@ -340,19 +364,25 @@ public:
             while(!comp.checkForDuplicates(numerizeCoor(input))) {
                 input = randomCoorPair();
             }
-            alphinput = input;
-            input = numerizeCoor(input);
-            if(checkGuess(humanBoard, input)){
-                cout << "AI guessed " << alphinput << " and HIT" << endl;
-                hit(humanBoard, input);
-                comp.addHit(input);
-                if (!boardStatus(humanBoard)){
-                    cout << "Better luck next time, AI wins!" << endl;
-                    break;
-                }
-            }else{
-                cout << "AI guessed " << alphinput << " and MISSED" << endl;
-                comp.addGuess(input);
+            while(checkGuess(humanBoard, numerizeCoor(input))){
+              alphinput = input;
+              input = numerizeCoor(input);
+              cout << "AI guessed " << alphinput << " and HIT" << endl;
+              hit(humanBoard, input);
+              comp.addHit(input);
+              printGameBoard(human, comp);
+              if (!boardStatus(humanBoard)){
+                cout << "Better luck next time, AI wins!" << endl;
+                return;
+              }
+              input = randomCoorPair();
+              while(!comp.checkForDuplicates(numerizeCoor(input))) {
+                  input = randomCoorPair();
+              }
+            }
+            if (!checkGuess(humanBoard, numerizeCoor(input))){
+                cout << "AI guessed " << input << " and MISSED" << endl;
+                comp.addGuess(numerizeCoor(input));
             }
             printGameBoard(human, comp);
         }
@@ -422,16 +452,22 @@ Game gameStartup(){
         }
     }
     Game game(size, pieceNum);
+    cout << "Now place your pieces by entering coordinate ranges (ex. a3-a5)" << endl;
     cout << "Follow each coordinate with the return key" << endl;
     string input;
     for (int i = 0; i < game.getPieceNumber(); i++){
-        cout << "Please enter a coordinate" << endl;
+        cout << "Please enter a coordinate for a 3 space piece" << endl;
         cin >> input;
-        while(!game.verifyCoorInput(input)){ //Loop to verify valid input
-            cout << "Invalid coordinate, please try again" << endl;
+        while(!game.verifyCoorRange(input,3)){ //Loop to verify valid input
+            cout << "Invalid coordinate range, please try again" << endl;
             cin >> input;
-            game.verifyCoorInput(input);
+            //game.verifyCoorInput(input);
         }
+        //cout << "i did it" << endl;
+        //Need to implent duplicate coordinates for placing ships
+        //Also display board after placing each ship
+        //Also probably less customizability, just make small medium large game mode
+        //Comment this shitshow
         input = game.fixCoorInput(input);
         while(!game.checkForDuplicates(game.getSetupStr(), input)){
                 cout << "Duplicate coordinate, please try again" << endl;
