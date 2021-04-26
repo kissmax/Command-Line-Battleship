@@ -4,19 +4,82 @@
 #include <random>
 using namespace std;
 
-Game :: Game(int board, int pieces){
-    boardSize = board;
-    pieceNumber = pieces;
-    setupStr = new string[pieceNumber];
-    humanBoard = new bool*[boardSize+1];
-    compBoard  = new bool*[boardSize+1];
-    for(int i = 0; i < boardSize+1; ++i){
-        humanBoard[i] = new bool[boardSize+1];
-        compBoard[i] = new bool[boardSize+1];
+Game :: Game(){
+    cout << "Welcome to command line Battleship!" << endl;
+    cout << "What size game would you like to play?" << endl;
+    cout << "1. Small (5x5)\n2. Medium (8x8)\n3. Large (10x10)" << endl;
+    int sizeInput;
+    cin >> sizeInput;
+    while (sizeInput > 3 || sizeInput < 1 || !cin.good()){
+        cin.clear();
+        cin.ignore(999,'\n');
+        cout << "Invalid response! Please select option 1, 2, or 3." << endl;
+        cin >> sizeInput;
     }
+    switch (sizeInput){
+        case 1:
+            boardSize = 5;
+            gameSize = "Small";
+            pieces = {2,2,4};
+            break;
+        case 2:
+            boardSize = 8;
+            gameSize = "Medium";
+            pieces = {2,2,2,3,3,4,5};
+            break;
+        case 3:
+            boardSize = 10;
+            gameSize = "Large";
+            pieces = {2,2,2,2,3,3,3,4,4,6};
+            break;
+    }
+    numPieces = pieces.size();
+    Player human(boardSize, numPieces);
+    Player ai(boardSize, numPieces);
+    printGameBoard();
+    cout << "Now place your " << numPieces << " pieces by entering coordinate ranges (ex. a3-a5)" << endl;
+    cout << "Follow each coordinate range with the return key" << endl;
+    string input;
+    int pieceLen;
+    for (int i = 0; i < numPieces; i++){
+        pieceLen = getPieceLength(i);
+        cout << "Please enter a coordinate for a " << getPieceDesc(pieceLen) << " which occupies " << pieceLen << " spaces." << endl;
+        cin >> input;
+        while(!verifyCoorRange(input, pieceLen)){ //Loop to verify valid input
+            cout << "Invalid coordinate range, please try again" << endl;
+            cin >> input;
+        }
+        vector<string> coorVec = getCoorVector(input);
+        vector<string>::iterator it;
+        for (it = coorVec.begin(); it != coorVec.end(); it++)
+        {
+            string coorPair = *it;
+            int row = coorPair[0] - 65;
+            int col = coorPair[1] - '0';
+            human.setBoardElement(col,row,true);
+        }
+        printGameBoard();
 
+        //Need to implent duplicate coordinates for placing ships
+        //Also display board after placing each ship
+        //Comment this shitshow
+        /*
+        while(!game.checkForDuplicates(game.getSetupStr(), input)){
+                cout << "Duplicate coordinate, please try again" << endl;
+                cin >> input;
+                while(!game.verifyCoorInput(input)){ //Loop to verify valid input
+                    cout << "Invalid coordinate, please try again" << endl;
+                    cin >> input;
+                    game.verifyCoorInput(input);
+                }
+                input = game.fixCoorInput(input);
+            }
+            */
+        //game.setSetupStrElement(i,input);
+    }
+    //game.printCoordinates(game.getSetupStr());
+    //game.gameSetup();
 }
-
 
 string Game :: numerizeCoor(string s){
     s[0] = s[0]-16;
@@ -42,46 +105,96 @@ int Game :: randomCoor(){
 void Game :: gameSetup(){
     for(int i = 0; i < boardSize; i++){
         for(int j = 0; j < boardSize; j++){
-            humanBoard[i][j] = false;
-            compBoard[i][j] = false;
+            human.getBoard()[i][j] = false;
+            ai.getBoard()[i][j] = false;
         }
     }
 
     int x,y;
-    for (int i = 0; i < pieceNumber; i++){
+    for (int i = 0; i < numPieces; i++){
         setupStr[i] = numerizeCoor(setupStr[i]);
         x = setupStr[i][0] - '0';
         y = setupStr[i][1] - '0';
-        setBoardElement(humanBoard, x, y, true);
+        human.setBoardElement(x, y, true);
     }
 
-    for (int i = 0; i < pieceNumber; i++){
+    for (int i = 0; i < numPieces; i++){
         x = randomCoor();
         y = randomCoor();
-        while(compBoard[x][y]){
+        while(ai.getBoardElement(x, y)){
             x = randomCoor();
             y = randomCoor();
         }
-        setBoardElement(compBoard, x, y, true);
+        ai.setBoardElement(x, y, true);
     }
 }
 
-string Game :: fixCoorInput(string s) {
-    string n="";
-    if (s[0] > 96 && s[0] < 106) {
-        n += (s[0] - 32);
-        n += s[1];
-        return n;
+string Game :: getPieceDesc(int size){
+    switch (size){
+        case 2:
+            return "patrol boat";
+            break;
+        case 3:
+        {
+            int choice = rand() % 2;
+            if (choice == 0){
+                return "submarine";
+            }
+            else {
+                return "destroyer";
+            }
+            break;
+        }
+        case 4:
+            return "battleship";
+            break;
+        case 5:
+            return "carrier";
+            break;
     }
-    return s;
+    return "";
+}
+
+vector<string> Game :: getCoorVector(string s) {
+    vector<string> coorVec;
+    string coor1 = s.substr(0,s.find('-'));
+    string coor2 = s.substr(s.find('-')+1,s.length()-1);
+    char row1 = toupper(coor1[0]);
+    int col1 = coor1[1] - '0';
+    char row2 = toupper(coor2[0]);
+    int col2 =  coor2[1] - '0';
+    //if the rows are the same, loop through the columns and add values to vector
+    if (row1 == row2){
+        for (int i = col1; i <= col2; ++i){
+            coorVec.push_back(row1+to_string(i));
+        }
+    }
+    //if the columns are the same, loop through the rows and add values to vector
+    else{
+        for(char i = row1; i <= row2; ++i){
+            coorVec.push_back(i+to_string(col1));
+        }
+    }
+    return coorVec;
 }
 
 bool Game :: verifyCoorInput(string s) {
     if (s.length() != 2) {
+        cout << "Verify err1" << endl;
         return false;
-    } else if (s[1] > (57 - (9-boardSize)) || s[1] < 49 ) {
+    }
+    char row = tolower(s[0]);
+    int col = s[1] - '0';
+    //check if row is between A and the "boardSize"th letter of the alphabet
+    //checks if char is less than ascii 'a' which is 97
+    //or if char is greater than the ascii value of 96 + boardsize, which is the last letter on the grid
+    if (row < 97 || row > 96 + boardSize) {
+        cout << "Verify err2" << endl;
         return false;
-    } else if (s[0] < 65 || (s[0] > (73 - (9-boardSize)) && s[0] < 96) || s[0] > (105 - (9-boardSize))) {
+    }
+    //check if col is between 0 and boardSize
+    if (col < 0 || col > boardSize) {
+        cout << "Verify err3" << endl;
         return false;
     } else {
         return true;
@@ -91,72 +204,78 @@ bool Game :: verifyCoorInput(string s) {
 bool Game :: verifyCoorRange(string s, int pieceSize) {
     string coor1 = s.substr(0,s.find('-'));
     string coor2 = s.substr(s.find('-')+1,s.length()-1);
-    if (!verifyCoorInput(coor1) || !verifyCoorInput(coor2))
-        return false;
-    if ((coor1[0] != coor2[0]) && (coor1[1] != coor2[1]))
-        return false;
-    if (coor1[1] == coor2[1]){;
-        if ((pieceSize - (int(coor2[0]) - int(coor1[0]))) != 1)
-        return false;
-    }
-    else if (coor1[0] == coor2[0]){
-        if (pieceSize - (coor2[1] - coor1[1]) != 1)
+    int row1 = coor1[0];
+    int col1 = coor1[1];
+    int row2 = coor2[0];
+    int col2 = coor2[1];
+    //assure the individual coordinate values are not the same
+    if ((row1 != row2) && (col1 != col2)){
+        cout << "Range err1" << endl;
         return false;
     }
-    return true;
-}
-
-bool Game :: checkForDuplicates(string* s,string input){
-    for(int i = 0; i < boardSize; i++){
-        if (input == s[i]){
+    //assure the individual coordinate values exist on the board
+    if (!verifyCoorInput(coor1) || !verifyCoorInput(coor2)){
+        cout << "Range err2" << endl;
+        return false;
+    }
+    //if the coordinates fall in the same column make sure it occupies pieceSize spaces
+    if (col1 == col2){
+        if (row2 - row1 != pieceSize-1){
+            cout << "row2-row1: " << row2-row1 << endl;
+            cout << "Range err3" << endl;
             return false;
         }
     }
+    //if the coordinates fall in the same row make sure it occupies pieceSize spaces
+    else if (row1 == row2){
+        if (col2 - col1 != pieceSize-1){
+            cout << "col2-col1: " << col2-col1 << endl;
+            cout << "Range err4" << endl;
+            return false;
+        }
+    }
+    vector<string> coorVec = getCoorVector(s);
+    if (!human.noDuplicates(coorVec)){
+        cout << "Range err5" << endl;
+        return false;
+    }
     return true;
 }
 
-void Game :: printCoordinates(string* s){
-    cout << "Your coordinates are" << endl << "{ ";
-    for (int i = 0; i < pieceNumber; i++){
-        cout << getSetupStrElement(i) << " ";
-    }
-    cout << "}" << endl;
-}
-
-void Game :: printGameBoard(Player human, Player comp) {
-    for (int i = 0; i <= (boardSize-2); i++){
+void Game :: printGameBoard() {
+    for (int i = 0; i <= (boardSize-1); ++i){
         cout << " ";
     }
     cout << "You";
-    for (int i = 0; i <= (2 * boardSize)+2; i++){
+    for (int i = 0; i <= (2 * boardSize)+2; ++i){
         cout << " ";
     }
     cout << "AI" << endl;
     for (int col = 0; col < boardSize + 1; col++) {
-        for(int row = 0; row < boardSize + 1 ; row++) {
+        for(int row = 0; row < boardSize + 1; row++) {
             if (col == 0) {
                 if (row == 0) {
                     cout << "  ";
-                } else {
+                }
+                if (row < boardSize){
                     cout << row << " ";
                 }
-
             } else if (row == 0) {
                 char i = 64 + col;
                 cout << i << " ";
-            } else if (humanBoard[col][row]) {
+            } else if (human.getBoardElement(col-1, row)) {
                 cout << "@ ";
             } else {
-                cout << checkCoor(comp, col, row);
+                cout << checkCoor(ai, col-1, row);
             }
-
         }
         cout << " |  ";
         for(int row = 0; row < boardSize + 1; row++){
             if ( col == 0){
                 if (row == 0){
                     cout << "  ";
-                } else {
+                }
+                if (row < boardSize){
                     cout << row << " ";
                 }
             }else if(row == 0){
@@ -164,7 +283,7 @@ void Game :: printGameBoard(Player human, Player comp) {
                 cout << i << " ";
 
             } else {
-                cout << checkCoor(human, col, row);
+                cout << checkCoor(human, col-1, row);
             }
         }
         cout << endl;
@@ -200,7 +319,6 @@ string Game :: getGuess(Player human){
         cin >> input;
         verifyCoorInput(input);
     }
-    input = fixCoorInput(input);
     while(!human.checkForDuplicates(numerizeCoor(input))){
         cout << "Duplicate coordinate, please try again" << endl;
         cin >> input;
@@ -208,28 +326,24 @@ string Game :: getGuess(Player human){
             cout << "Invalid coordinate, please try again" << endl;
             cin >> input;
         }
-        input = fixCoorInput(input);
     }
-    input = fixCoorInput(input);
     return input;
 }
 
 void Game :: gamePlay(){
     string input;
     string alphinput;
-    Player human;
-    Player comp;
-    printGameBoard(human, comp);
-    while(boardStatus(humanBoard) && boardStatus(compBoard)){
+    printGameBoard();
+    while(human.boardStatus() && ai.boardStatus()){
         input = getGuess(human);
         alphinput = input;
         input = numerizeCoor(input);
-        while(checkGuess(compBoard,input)){
+        while(ai.checkGuess(input)){
             cout << "You guessed " << alphinput << " and HIT" << endl;
-            hit(compBoard, input);
+            ai.markHit(input);
             human.addHit(input);
-            printGameBoard(human, comp);
-            if (!boardStatus(compBoard)) {
+            printGameBoard();
+            if (!ai.boardStatus()) {
             cout << "Congratulations!! You win!!" << endl;
             return;
             }
@@ -237,127 +351,34 @@ void Game :: gamePlay(){
             alphinput = input;
             input = numerizeCoor(input);
         }
-        if(!checkGuess(compBoard,input)){
+        if(!ai.checkGuess(input)){
             cout << "You guessed " << alphinput << " and MISSED" << endl;
             human.addGuess(input);
         }
         input = randomCoorPair();
-        while(!comp.checkForDuplicates(numerizeCoor(input))) {
+        while(!ai.checkForDuplicates(numerizeCoor(input))) {
             input = randomCoorPair();
         }
-        while(checkGuess(humanBoard, numerizeCoor(input))){
+        while(human.checkGuess( numerizeCoor(input))){
             alphinput = input;
             input = numerizeCoor(input);
             cout << "AI guessed " << alphinput << " and HIT" << endl;
-            hit(humanBoard, input);
-            comp.addHit(input);
-            printGameBoard(human, comp);
-            if (!boardStatus(humanBoard)){
+            human.markHit(input);
+            ai.addHit(input);
+            printGameBoard();
+            if (!human.boardStatus()){
             cout << "Better luck next time, AI wins!" << endl;
             return;
             }
             input = randomCoorPair();
-            while(!comp.checkForDuplicates(numerizeCoor(input))) {
+            while(!ai.checkForDuplicates(numerizeCoor(input))) {
                 input = randomCoorPair();
             }
         }
-        if (!checkGuess(humanBoard, numerizeCoor(input))){
+        if (!human.checkGuess(numerizeCoor(input))){
             cout << "AI guessed " << input << " and MISSED" << endl;
-            comp.addGuess(numerizeCoor(input));
+            ai.addGuess(numerizeCoor(input));
         }
-        printGameBoard(human, comp);
+        printGameBoard();
     }
-}
-
-bool Game :: checkGuess(bool** board, string guess){
-    int x = guess[0] - '0';
-    int y = guess[1] - '0';
-    if(board[x][y]){
-        return true;
-    }
-    return false;
-}
-
-void Game :: hit(bool** board, string coor){
-    int x = coor[0] - '0';
-    int y = coor[1] - '0';
-    board[x][y] = false;
-}
-
-bool Game :: boardStatus(bool** board){
-    for(int i = 0; i <= boardSize; i++){
-        for(int j = 0; j <=boardSize; j++){
-            if(board[i][j]){
-                return true; //still pieces
-            }
-        }
-    }
-    return false; // no pieces remaining
-}
-
-Game gameStartup(){
-    cout << "Welcome to command line Battleship!" << endl;
-    cout << "How big would you like the game board to be?" << endl;
-    int size;
-    while(!(cin>>size)) {
-        cin.clear();
-        cin.ignore(999,'\n');
-        cout<<"Invalid data type! Please try again" << endl;
-    }
-    while (size > 9 || size < 1){
-        cout << "Game boards of that size are not currently supported, please try again" << endl;
-        while(!(cin>>size)) {
-            cin.clear();
-            cin.ignore(999,'\n');
-            cout<<"Invalid data type! Please try again" << endl;
-        }
-    }
-    cout << "How many game pieces would you like to play with?" << endl;
-    int pieceNum;
-    while(!(cin>>pieceNum)) {
-        cin.clear();
-        cin.ignore(999,'\n');
-        cout<<"Invalid data type! Please try again" << endl;
-    }
-    while (pieceNum > size*size || pieceNum < 1){
-        cout << "Your board size does not support that many game pieces, please try again" << endl;
-        while(!(cin>>pieceNum)) {
-            cin.clear();
-            cin.ignore(999,'\n');
-            cout<<"Invalid data type! Please try again" << endl;
-        }
-    }
-    Game game(size, pieceNum);
-    cout << "Now place your pieces by entering coordinate ranges (ex. a3-a5)" << endl;
-    cout << "Follow each coordinate with the return key" << endl;
-    string input;
-    for (int i = 0; i < game.getPieceNumber(); i++){
-        cout << "Please enter a coordinate for a 3 space piece" << endl;
-        cin >> input;
-        while(!game.verifyCoorRange(input,3)){ //Loop to verify valid input
-            cout << "Invalid coordinate range, please try again" << endl;
-            cin >> input;
-            //game.verifyCoorInput(input);
-        }
-        //cout << "i did it" << endl;
-        //Need to implent duplicate coordinates for placing ships
-        //Also display board after placing each ship
-        //Also probably less customizability, just make small medium large game mode
-        //Comment this shitshow
-        input = game.fixCoorInput(input);
-        while(!game.checkForDuplicates(game.getSetupStr(), input)){
-                cout << "Duplicate coordinate, please try again" << endl;
-                cin >> input;
-                while(!game.verifyCoorInput(input)){ //Loop to verify valid input
-                    cout << "Invalid coordinate, please try again" << endl;
-                    cin >> input;
-                    game.verifyCoorInput(input);
-                }
-                input = game.fixCoorInput(input);
-            }
-        game.setSetupStrElement(i,input);
-    }
-    game.printCoordinates(game.getSetupStr());
-    game.gameSetup();
-    return game;
 }

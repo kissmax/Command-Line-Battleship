@@ -6,74 +6,54 @@ using namespace std;
 
 class Game {
 
-private:
+    private:
 
-    int boardSize;
-    int pieceNumber;
-    string* setupStr;
-    bool** humanBoard;
-    bool** compBoard;
+        int boardSize;
+        vector<int> pieces;
+        int numPieces;
+        string gameSize;
+        string* setupStr;
+        Player human;
+        Player ai;
 
-public:
+    public:
 
+        Game();
 
-    Game(int board, int pieces);
+        string getGameSize() {return gameSize;}
+        
+        int getNumPieces() {return numPieces;}
+        
+        int getPieceLength(int index) {return pieces[index];}
 
-    string* getSetupStr() {return setupStr;}
+        int getBoardSize() {return boardSize;}
 
-    bool** getHumanBoard() {return humanBoard;}
+        void setBoardSize(int n) {boardSize = n;}
 
-    bool** getCompBoard() {return compBoard;}
+        void setPieceNumber(int n) {numPieces = n;}
 
-    string getSetupStrElement(int i) {return setupStr[i];}
+        string getPieceDesc(int size);
 
-    void setSetupStrElement(int i, string val) {setupStr[i] = val;}
+        string numerizeCoor(string s);
 
-    bool getBoardElement(bool** s, int row, int col) {return s[row][col];}
+        string randomCoorPair();
 
-    void setBoardElement(bool** s, int row, int col, bool val) {s[row][col] = val;}
+        int randomCoor();
 
-    int getBoardSize() {return boardSize;}
+        void gameSetup();
 
-    void setBoardSize(int n) {boardSize = n;}
+        vector<string> getCoorVector(string s);
 
-    void setPieceNumber(int n) {pieceNumber = n;}
+        bool verifyCoorInput(string s);
 
-    int getPieceNumber() {return pieceNumber;}
+        bool verifyCoorRange(string s, int pieceSize);
 
-    string numerizeCoor(string s);
+        void printGameBoard();
 
-    string randomCoorPair();
+        string checkCoor(Player s, int col, int row);
 
-    int randomCoor();
+        string getGuess(Player human);
 
-    void gameSetup();
-
-    string fixCoorInput(string s);
-
-    bool verifyCoorInput(string s);
-
-    bool verifyCoorRange(string s, int pieceSize);
-
-    bool checkForDuplicates(string* s,string input);
-
-    void printCoordinates(string* s);
-
-    void printGameBoard(Player human, Player comp);
-
-    string checkCoor(Player s, int col, int row);
-
-    string getGuess(Player human);
-
-    void gamePlay();
-
-    bool checkGuess(bool** board, string guess);
-
-    void hit(bool** board, string coor);
-
-    bool boardStatus(bool** board);
-
+        void gamePlay();
 };
-
-Game gameStartup();
 #endif

@@ -27,8 +27,7 @@ public:
 
 int main() {
     srand(time(NULL));
-    Game game = gameStartup();
+    Game game;
     game.gamePlay();
     return 0;
-
 }
