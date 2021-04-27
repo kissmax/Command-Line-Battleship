@@ -18,6 +18,8 @@ class Player{
         Player();
 
         Player(int boardSize, int numPieces);
+        
+        int testVal;
 
         int getRemainingPieces() {return remainingPieces;}
 

@@ -34,8 +34,8 @@ Game :: Game(){
             break;
     }
     numPieces = pieces.size();
-    Player human(boardSize, numPieces);
-    Player ai(boardSize, numPieces);
+    human = Player(boardSize, numPieces);
+    ai = Player(boardSize, numPieces);
     printGameBoard();
     cout << "Now place your " << numPieces << " pieces by entering coordinate ranges (ex. a3-a5)" << endl;
     cout << "Follow each coordinate range with the return key" << endl;
@@ -56,7 +56,7 @@ Game :: Game(){
             string coorPair = *it;
             int row = coorPair[0] - 65;
             int col = coorPair[1] - '0';
-            human.setBoardElement(col,row,true);
+            human.setBoardElement(row,col,true);
         }
         printGameBoard();
 
@@ -103,13 +103,6 @@ int Game :: randomCoor(){
 }
 
 void Game :: gameSetup(){
-    for(int i = 0; i < boardSize; i++){
-        for(int j = 0; j < boardSize; j++){
-            human.getBoard()[i][j] = false;
-            ai.getBoard()[i][j] = false;
-        }
-    }
-
     int x,y;
     for (int i = 0; i < numPieces; i++){
         setupStr[i] = numerizeCoor(setupStr[i]);
@@ -251,46 +244,46 @@ void Game :: printGameBoard() {
         cout << " ";
     }
     cout << "AI" << endl;
-    for (int col = 0; col < boardSize + 1; col++) {
-        for(int row = 0; row < boardSize + 1; row++) {
-            if (col == 0) {
-                if (row == 0) {
+    for (int row = 0; row < boardSize + 1; row++) {
+        for(int col = 0; col < boardSize + 1; col++) {
+            if (row == 0) {
+                if (col == 0) {
                     cout << "  ";
                 }
-                if (row < boardSize){
-                    cout << row << " ";
+                else{
+                    cout << col-1 << " ";
                 }
-            } else if (row == 0) {
-                char i = 64 + col;
+            } else if (col == 0) {
+                char i = 64 + row;
                 cout << i << " ";
-            } else if (human.getBoardElement(col-1, row)) {
+            } else if (human.getBoardElement(row-1, col-1)) {
                 cout << "@ ";
             } else {
-                cout << checkCoor(ai, col-1, row);
+                cout << checkCoor(ai, row-1, col-1);
             }
         }
         cout << " |  ";
-        for(int row = 0; row < boardSize + 1; row++){
-            if ( col == 0){
-                if (row == 0){
+        for(int col = 0; col < boardSize + 1; col++){
+            if ( row == 0){
+                if (col == 0){
                     cout << "  ";
                 }
-                if (row < boardSize){
-                    cout << row << " ";
+                else{
+                    cout << col-1 << " ";
                 }
-            }else if(row == 0){
-                char i = 64 + col;
+            }else if(col == 0){
+                char i = 64 + row;
                 cout << i << " ";
 
             } else {
-                cout << checkCoor(human, col-1, row);
+                cout << checkCoor(human, row-1, col-1);
             }
         }
         cout << endl;
     }
 }
 
-string Game :: checkCoor(Player s, int col, int row){
+string Game :: checkCoor(Player s, int row, int col){
     string result;
     for (int i = 0; i < s.getGuesses().size(); i++) {
         string x = s.getGuess(i);

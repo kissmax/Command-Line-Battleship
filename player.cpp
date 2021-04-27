@@ -16,6 +16,7 @@ Player :: Player(int boardSize, int numPieces){
         board.push_back(col);
     }
     remainingPieces = numPieces;
+    testVal = 19;
 }
 
 bool Player :: checkGuess(string guess){
@@ -40,7 +41,7 @@ bool Player :: noDuplicates(vector<string> coorVec){
         string coorPair = *it;
         int row = coorPair[0] - 65;
         int col = coorPair[1] - '0';
-        if (board[col][row])
+        if (board[row][col])
             return false;
     }
     return true;
