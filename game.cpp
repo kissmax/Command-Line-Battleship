@@ -59,26 +59,8 @@ Game :: Game(){
             human.setBoardElement(row,col,true);
         }
         printGameBoard();
-
-        //Need to implent duplicate coordinates for placing ships
-        //Also display board after placing each ship
-        //Comment this shitshow
-        /*
-        while(!game.checkForDuplicates(game.getSetupStr(), input)){
-                cout << "Duplicate coordinate, please try again" << endl;
-                cin >> input;
-                while(!game.verifyCoorInput(input)){ //Loop to verify valid input
-                    cout << "Invalid coordinate, please try again" << endl;
-                    cin >> input;
-                    game.verifyCoorInput(input);
-                }
-                input = game.fixCoorInput(input);
-            }
-            */
-        //game.setSetupStrElement(i,input);
     }
-    //game.printCoordinates(game.getSetupStr());
-    //game.gameSetup();
+    aiSetup();
 }
 
 string Game :: numerizeCoor(string s){
@@ -97,20 +79,11 @@ string Game :: randomCoorPair(){
 }
 
 int Game :: randomCoor(){
-    mt19937 rng(rand());
-    uniform_int_distribution<int> randNum(1,boardSize);
-    return randNum(rng);
+    return rand() % boardSize+1;
 }
 
-void Game :: gameSetup(){
+void Game :: aiSetup(){
     int x,y;
-    for (int i = 0; i < numPieces; i++){
-        setupStr[i] = numerizeCoor(setupStr[i]);
-        x = setupStr[i][0] - '0';
-        y = setupStr[i][1] - '0';
-        human.setBoardElement(x, y, true);
-    }
-
     for (int i = 0; i < numPieces; i++){
         x = randomCoor();
         y = randomCoor();

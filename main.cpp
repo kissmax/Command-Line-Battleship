@@ -28,6 +28,6 @@ public:
 int main() {
     srand(time(NULL));
     Game game;
-    game.gamePlay();
+    //game.gamePlay();
     return 0;
 }

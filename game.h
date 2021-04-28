@@ -40,7 +40,7 @@ class Game {
 
         int randomCoor();
 
-        void gameSetup();
+        void aiSetup();
 
         vector<string> getCoorVector(string s);
 
